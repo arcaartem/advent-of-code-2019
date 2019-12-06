@@ -3,9 +3,11 @@ const fs = require('fs');
 const INPUT_FILE = '../input.txt';
 
 const main = () => {
-    let orbitData = getPuzzleInput(INPUT_FILE);
-    const part1Solution = solvePart1(orbitData);
-    const part2Solution = solvePart2(orbitData);
+    const orbitData = getPuzzleInput(INPUT_FILE);
+    const orbitCalculator = new OrbitCalculator(orbitData);
+
+    const part1Solution = orbitCalculator.countOrbits();
+    const part2Solution = orbitCalculator.countOrbitalTransfers('YOU', 'SAN');
 
     console.log(`Part 1 Solution: ${ part1Solution }`);
     console.log(`Part 2 Solution: ${ part2Solution }`);
@@ -14,64 +16,46 @@ const main = () => {
 const getPuzzleInput = (filename) => {
     const fileContent = fs.readFileSync(INPUT_FILE, 'utf8');
     const lines = fileContent.match(/[^\r\n]+/g);
-    const orbitData = lines.map(line => line.split(')'));
-    return orbitData;
+    return lines.map(line => line.split(')'));
 }
 
-const solvePart1 = (orbitData) => {
-    const orbitMap = buildMap(orbitData);
-    const orbitCount = countOrbits(orbitMap);
-    return  orbitCount;
-}
-
-const solvePart2 = (orbitData) => {
-    const orbitMap = buildMap(orbitData);
-    const orbitTransfers = countOrbitTransfers(orbitMap, orbitMap['YOU'], orbitMap['SAN']);
-    return orbitTransfers;
-}
-
-const buildMap = (orbitData) => {
-    let orbitMap = {};
-    orbitData.forEach(([left, right]) => {
-        orbitMap[right] = left;
-    });
-    return orbitMap;
-}
-
-const countOrbits = (orbitMap) => {
-    const planets = Object.keys(orbitMap);
-    const count = planets.map(planet => countOrbit(orbitMap, planet)).reduce((total, current) => total + current)
-    return count;
-}
-
-const countOrbit = (orbitMap, planet) => {
-    if (planet == 'COM') {
-        return 0;
+class OrbitCalculator {
+    constructor(orbitData) {
+        this.orbitMap = {};
+        orbitData.forEach(([left, right]) => this.orbitMap[right] = left);
     }
 
-    return countOrbit(orbitMap, orbitMap[planet]) + 1;
-}
-
-const countOrbitTransfers = (orbitMap, from, to, count = 0) => {
-    console.log(`${path(orbitMap, from)} -> ${path(orbitMap, to)} (${count})`);
-    if (from == to) {
-        return count;
+    countOrbits() {
+        const planets = Object.keys(this.orbitMap);
+        return planets.map(planet => this.countOrbit(planet))
+                      .reduce((total, current) => total + current);
     }
 
-    if (from == 'COM' || to == 'COM') {
-        return null;
+    countOrbit(planet) {
+        return (planet == 'COM') ? 0 : (this.countOrbit(this.orbitMap[planet]) + 1);
     }
-    return Math.min(countOrbitTransfers(orbitMap, orbitMap[from], to, count + 1), countOrbitTransfers(orbitMap, from, orbitMap[to], count + 1));
-}
 
-const path = (orbitMap, planet) => {
-    let current = planet;
-    let p = planet;
-    while (current != 'COM') {
-        current = orbitMap[planet];
-        p = p + '->' + current;
+    pathToCom(planet) {
+        let current = planet;
+        let trail = [];
+        while (current != 'COM') {
+            current = this.orbitMap[current];
+            trail.unshift(current);
+        }
+        return trail;
     }
-    return p;
+
+    countOrbitalTransfers(from, to) {
+        const path1 = this.pathToCom(from);
+        const path2 = this.pathToCom(to);
+
+        while (path1[0] == path2[0]) {
+            path1.shift();
+            path2.shift();
+        }
+
+        return path1.length + path2.length;
+    }
 }
 
 main();
