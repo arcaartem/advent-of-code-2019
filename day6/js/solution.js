@@ -7,8 +7,8 @@ const main = () => {
     const part1Solution = solvePart1(orbitData);
     const part2Solution = solvePart2(orbitData);
 
-    console.log(`Part 1 Solution: ${ JSON.stringify(part1Solution) }`);
-    //console.log(`Part 2 Solution: ${ part2Solution }`);
+    console.log(`Part 1 Solution: ${ part1Solution }`);
+    console.log(`Part 2 Solution: ${ part2Solution }`);
 }
 
 const getPuzzleInput = (filename) => {
@@ -26,7 +26,8 @@ const solvePart1 = (orbitData) => {
 
 const solvePart2 = (orbitData) => {
     const orbitMap = buildMap(orbitData);
-    return orbitData;
+    const orbitTransfers = countOrbitTransfers(orbitMap, orbitMap['YOU'], orbitMap['SAN']);
+    return orbitTransfers;
 }
 
 const buildMap = (orbitData) => {
@@ -44,11 +45,33 @@ const countOrbits = (orbitMap) => {
 }
 
 const countOrbit = (orbitMap, planet) => {
-    if (planet == "COM") {
+    if (planet == 'COM') {
         return 0;
     }
 
     return countOrbit(orbitMap, orbitMap[planet]) + 1;
+}
+
+const countOrbitTransfers = (orbitMap, from, to, count = 0) => {
+    console.log(`${path(orbitMap, from)} -> ${path(orbitMap, to)} (${count})`);
+    if (from == to) {
+        return count;
+    }
+
+    if (from == 'COM' || to == 'COM') {
+        return null;
+    }
+    return Math.min(countOrbitTransfers(orbitMap, orbitMap[from], to, count + 1), countOrbitTransfers(orbitMap, from, orbitMap[to], count + 1));
+}
+
+const path = (orbitMap, planet) => {
+    let current = planet;
+    let p = planet;
+    while (current != 'COM') {
+        current = orbitMap[planet];
+        p = p + '->' + current;
+    }
+    return p;
 }
 
 main();
