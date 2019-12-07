@@ -4,6 +4,7 @@ const INPUT_FILE = '../input.txt';
 
 const main = () => {
     let program = getPuzzleInput(INPUT_FILE);
+
     const part1Solution = solvePart1(program);
     const part2Solution = solvePart2(program);
 
@@ -18,211 +19,168 @@ const getPuzzleInput = (filename) => {
     return program;
 }
 
+
 const solvePart1 = (program) => {
-    const result = runProgram(program, 12, 2);
+    let result;
+    const opcodes = {
+        ADD: '01',
+        MULTIPLY: '02',
+        INPUT: '03',
+        OUTPUT: '04',
+        HALT: '99'
+    }
+    const input = () => 1;
+    const output = (value) => result = value;
+    const computer = new IntcodeComputer(opcodes, program, input, output);
+    computer.runProgram();
     return result;
 }
 
 const solvePart2 = (program) => {
-    const result = runProgram(program, 12, 2);
+    let result;
+    const opcodes = {
+        ADD: '01',
+        MULTIPLY: '02',
+        INPUT: '03',
+        OUTPUT: '04',
+        JUMP_IF_TRUE: '05',
+        JUMP_IF_FALSE: '06',
+        LESS_THAN: '07',
+        EQUALS: '08',
+        HALT: '99'
+    }
+    const input = () => 5;
+    const output = (value) => result = value;
+    const computer = new IntcodeComputer(opcodes, program, input, output);
+    computer.runProgram();
     return result;
 }
 
-const runProgram = (program) => {
-    let memory = [...program];
-    let memoryIndex = 0;
+class IntcodeComputer {
+    constructor(opcodes, program, input, output) {
+        this.opcodes = opcodes;
+        this.memory = [...program];
+        this.memoryIndex = 0;
+        this.doInput = input;
+        this.doOutput = output;
+    }
 
-    for (;;)
-    {
-        let instruction = fetchInstruction(memory, memoryIndex);
-        console.log(JSON.stringify(instruction));
-        
-        switch (instruction.opcode) {
-            case opcodes.ADD:
-                do_add(instruction, memory);
-                break;
-            case opcodes.MULTIPLY:
-                do_multiply(instruction, memory);
-                break;
-            case opcodes.INPUT:
-                do_input(instruction, memory);
-                break;
-            case opcodes.OUTPUT:
-                do_output(instruction, memory);
-                break;
-            case opcodes.JUMP_IF_TRUE:
-                do_jump_if_true(instruction, memory);
-                break
-            case opcodes.JUMP_IF_FALSE:
-                do_jump_if_false(instruction, memory);
-                break
-            case opcodes.LESS_THAN:
-                do_less_than(instruction, memory);
-                break
-            case opcodes.EQUALS:
-                do_equals(instruction, memory);
-                break
-            case opcodes.HALT:
-                return;
-            case opcodes.UNKNOWN:
-                break;
-            default:
-                throw new Error(`Invalid instruction: ${ instruction }`);
+    runProgram() {
+        while (this.memoryIndex != undefined)
+        {
+            let instruction = this.fetchInstruction(this.memoryIndex);
+            instruction.execute();
         }
-
-        memoryIndex = instruction.advanceIndex(memoryIndex);
-    };
-}
-
-
-const do_add = (instruction, memory) => {
-    const result = instruction.source1 + instruction.source2;
-    memory[instruction.target] = result;
-}
-
-const do_multiply = (instruction, memory) => {
-    const result = instruction.source1 * instruction.source2;
-    memory[instruction.target] = result;
-}
-
-const do_input = (instruction, memory) => {
-    console.log(`INPUT: ${ instruction.target }`)
-    memory[instruction.target] = 5;
-}
-
-const do_output = (instruction, memory) => {
-    console.log(`OUTPUT: ${ memory[instruction.target] }`)
-}
-
-const do_jump_if_true = (instruction, memory) => {
-    if (instruction.source1 != 0) {
-        instruction.advanceIndex = (currentIndex) => instruction.target;
     }
-}
 
-const do_jump_if_false = (instruction, memory) => {
-    if (instruction.source1 == 0) {
-        instruction.advanceIndex = (currentIndex) => instruction.target;
+    fetchNextMemoryValue() {
+        const value = this.memory[this.memoryIndex];
+        this.memoryIndex++;
+        return value;
     }
-}
 
-const do_less_than = (instruction, memory) => {
-    if (instruction.source1 < instruction.source2) {
-        memory[instruction.target] = 1;
-    } else {
-        memory[instruction.target] = 0;
+    fetchParameter(valueMode = false) {
+        const value = this.fetchNextMemoryValue();
+    
+        return (valueMode) ? value : this.memory[value];
     }
-}
 
-const do_equals = (instruction, memory) => {
-    if (instruction.source1 == instruction.source2) {
-        memory[instruction.target] = 1;
-    } else {
-        memory[instruction.target] = 0;
+    readOpcode() {
+        let opcodeString = this.fetchNextMemoryValue().toString().padStart(5, '0');
+        let [ mode3, mode2, mode1 ] = opcodeString.slice(0, 3);
+        let opcode = opcodeString.slice(3);
+        return [ mode3 == '1', mode2 == '1', mode1 == '1', opcode ];
     }
-}
-const fetchInstruction = (memory, memoryIndex) => {
-    let instruction = decodeInstruction(memory, memoryIndex);
-    return instruction;
-}
 
-const decodeInstruction = (memory, memoryIndex) => {
-    let opcodeString = memory[memoryIndex].toString().padStart(5, '0');
-    let [ mode3rd, mode2nd, mode1st ] = opcodeString.slice(0, 3);
-    let opcode = opcodeString.slice(3);
-    switch (opcode) {
-        case '01':
-            return {
-                opcode: opcodes.ADD,
-                source1: fetchParameter(memory, memory[memoryIndex + 1], mode1st),
-                source2: fetchParameter(memory, memory[memoryIndex + 2], mode2nd),
-                target: memory[memoryIndex + 3],
-                advanceIndex: (currentIndex) => currentIndex + 4
-            };
-        case '02':
-            return {
-                opcode: opcodes.MULTIPLY,
-                source1: fetchParameter(memory, memory[memoryIndex + 1], mode1st),
-                source2: fetchParameter(memory, memory[memoryIndex + 2], mode2nd),
-                target: memory[memoryIndex + 3],
-                advanceIndex: (currentIndex) => currentIndex + 4
-            };
-        case '03':
-            return {
-                opcode: opcodes.INPUT,
-                target: memory[memoryIndex + 1],
-                advanceIndex: (currentIndex) => currentIndex + 2
-            };
-        case '04':
-            return {
-                opcode: opcodes.OUTPUT,
-                target: memory[memoryIndex + 1],
-                advanceIndex: (currentIndex) => currentIndex + 2
-            };
-        case '05':
-            return {
-                opcode: opcodes.JUMP_IF_TRUE,
-                source1: fetchParameter(memory, memory[memoryIndex+1], mode1st),
-                target: fetchParameter(memory, memory[memoryIndex+2], mode2nd),
-                advanceIndex: (currentIndex) => currentIndex + 3
-            };
-        case '06':
-            return {
-                opcode: opcodes.JUMP_IF_FALSE,
-                source1: fetchParameter(memory, memory[memoryIndex+1], mode1st),
-                target: fetchParameter(memory, memory[memoryIndex+2], mode2nd),
-                advanceIndex: (currentIndex) => currentIndex + 3
-            };
-        case '07':
-            return {
-                opcode: opcodes.LESS_THAN,
-                source1: fetchParameter(memory, memory[memoryIndex+1], mode1st),
-                source2: fetchParameter(memory, memory[memoryIndex+2], mode2nd),
-                target: memory[memoryIndex + 3],
-                advanceIndex: (currentIndex) => currentIndex + 4
-            };
-        case '08':
-            return {
-                opcode: opcodes.EQUALS,
-                source1: fetchParameter(memory, memory[memoryIndex+1], mode1st),
-                source2: fetchParameter(memory, memory[memoryIndex+2], mode2nd),
-                target: memory[memoryIndex + 3],
-                advanceIndex: (currentIndex) => currentIndex + 4
-            };
-        case '99':
-            return {
-                opcode: opcodes.HALT,
-                advanceIndex: (currentIndex) => currentIndex + 1
-            };
-        default:
-            return {
-                opcode: opcodes.UNKNOWN,
-                advanceIndex: (currentIndex) => currentIndex + 1
-            }
+    fetchInstruction() {
+        let [ mode3, mode2, mode1, opcode ] = this.readOpcode(); 
+        switch (opcode) {
+            case this.opcodes.ADD:
+                return {
+                    execute: () => {
+                        const source1 = this.fetchParameter(mode1);
+                        const source2 = this.fetchParameter(mode2);
+                        const target = this.fetchNextMemoryValue();
+                        const result = source1 + source2;
+                        this.memory[target] = result;
+                    }
+                };
+            case this.opcodes.MULTIPLY:
+                return {
+                    execute: () => {
+                        const source1 = this.fetchParameter(mode1);
+                        const source2 = this.fetchParameter(mode2);
+                        const target = this.fetchNextMemoryValue();
+                        const result = source1 * source2;
+                        this.memory[target] = result;
+                    }
+                };
+            case this.opcodes.INPUT:
+                return {
+                    execute: () => {
+                        const target = this.fetchNextMemoryValue();
+                        this.memory[target] = this.doInput();
+                    }
+                };
+            case this.opcodes.OUTPUT:
+                return {
+                    execute: () => {
+                        const target = this.fetchNextMemoryValue();
+                        this.doOutput(this.memory[target]);
+                    }
+                };
+            case this.opcodes.JUMP_IF_TRUE:
+                return {
+                    execute: () => {
+                        const source1 = this.fetchParameter(mode1);
+                        const target = this.fetchParameter(mode2);
+                        if (source1 != 0) {
+                            this.memoryIndex = target;
+                        }
+                    }
+                };
+            case this.opcodes.JUMP_IF_FALSE:
+                return {
+                    execute: () => {
+                        const source1 = this.fetchParameter(mode1);
+                        const target = this.fetchParameter(mode2);
+                        if (source1 == 0) {
+                            this.memoryIndex = target;
+                        }
+                    }
+                };
+            case this.opcodes.LESS_THAN:
+                return {
+                    execute: () => {
+                        const source1 = this.fetchParameter(mode1);
+                        const source2 = this.fetchParameter(mode2);
+                        const target = this.fetchNextMemoryValue();
+                        this.memory[target] = (source1 < source2) ? 1 : 0;
+                    }
+                };
+            case this.opcodes.EQUALS:
+                return {
+                    execute: () => {
+                        const source1 = this.fetchParameter(mode1);
+                        const source2 = this.fetchParameter(mode2);
+                        const target = this.fetchNextMemoryValue();
+                        this.memory[target] = (source1 == source2) ? 1 : 0;
+                    }
+                };
+            case this.opcodes.HALT:
+                return {
+                    execute: () => {
+                        this.memoryIndex = undefined;
+                    }
+                };
+            default:
+                return {
+                    execute: () => {
+                        console.log(`memoryIndex: ${this.memoryIndex} UNKNOWN OPCODE: ${ opcode }`)
+                    }
+                }
+        }
     }
-}
-
-const fetchParameter = (memory, memoryValue, mode) => {
-    const parameter = (mode == '0') ? memory[memoryValue] : memoryValue;
-    return parameter;
-}
-
-const opcodes = {
-    ADD: 'add',
-    MULTIPLY: 'multiply',
-    INPUT: 'input',
-    OUTPUT: 'output',
-    JUMP_IF_TRUE: 'jump_if_true',
-    JUMP_IF_FALSE: 'jump_if_false',
-    LESS_THAN: 'less_than',
-    EQUALS: 'equals',
-    HALT: 'halt',
-    UNKNOWN: 'unknown'
-}
-
-const parameterModes = {
-    POSITION: 'position',
-    IMMEDIATE: 'immediate',
 }
 
 main();
