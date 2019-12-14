@@ -6,6 +6,6 @@ const puzzleReader = new PuzzleReader('../input.txt');
 const puzzleInput = puzzleReader.read();
 
 const part1Solver = new Part1Solver(puzzleInput);
-const solution = part1Solver.findSolution();
+const part1Solution = part1Solver.findSolution();
 
-console.log(`Solution: ${ solution }`);
+console.log(`Part 1 Solution: ${ part1Solution }`);

@@ -13,10 +13,10 @@ class PuzzleReader {
 
     parseReaction(line) {
         const [consume, produce] = line.split('=>').map(x => x.trim());
-        const consumptions = consume.split(',').map(x => x.trim()).map(x => this.parseChemical(x));
+        const consumption = consume.split(',').map(x => x.trim()).map(x => this.parseChemical(x));
         return {
-            produce: this.parseChemical(produce),
-            consume: consumptions
+            product: this.parseChemical(produce),
+            consumes: consumption
         };
     }
 
