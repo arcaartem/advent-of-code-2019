@@ -5,19 +5,10 @@ class Reactor {
         this.availableOre = availableOre;
     }
 
-    produce(chemicals, chemical, quantity, multiplier = 1) {
+    produce(chemicals, chemical, quantity = 1) {
         function findDeficiencies(chemicals) {
             const keysFound = Object.keys(chemicals).filter(key => key != 'ORE' && chemicals[key] < 0);
             return keysFound;
-        }
-
-        function getMultiplier(multiplesOf, requiredQuantity) {
-            let multiplier = Math.floor(multiplesOf / quantity);
-            if (multiplesOf % quantity > 0) {
-                multiplier++;
-            }
-
-            return multiplier;
         }
 
         function applyReaction(chemicals, reaction, multiplier = 1) {
@@ -28,13 +19,20 @@ class Reactor {
             return newChemicals;
         }
 
+        function getMultiplier(multiples, quantity) {
+            const multiplier = Math.max(1, Math.floor(quantity / multiples));
+            return multiplier;
+        }
+
         let reaction = this.reactions[chemical];
+        let multiplier = getMultiplier(reaction.product.quantity, quantity);
         let newChemicals = applyReaction(chemicals, reaction, multiplier)
         let deficiencies;
         while ((deficiencies = findDeficiencies(newChemicals)).length > 0) {
             while (deficiencies.length > 0) {
                 let deficiency = deficiencies.shift();
                 reaction = this.reactions[deficiency];
+                multiplier = getMultiplier(reaction.product.quantity, Math.abs(newChemicals[deficiency]));
                 newChemicals = applyReaction(newChemicals, reaction, multiplier);
             }
         }
