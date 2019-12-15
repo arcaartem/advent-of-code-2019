@@ -16,23 +16,25 @@ class PuzzleReader {
         let distance = parseInt(segment.slice(1));
         let [x, y] = current;
         switch (direction) {
-            case 'U': return [x, y + distance];
-            case 'D': return [x, y - distance];
-            case 'L': return [x - distance, y];
-            case 'R': return [x + distance, y];
+            case 'U': return { end: [x, y + distance], distance };
+            case 'D': return { end: [x, y - distance], distance };
+            case 'L': return { end: [x - distance, y], distance };
+            case 'R': return { end: [x + distance, y], distance };
             default:  throw `Unknown direction: ${direction}`;
         }
     }
 
     nextPath(acc, segment) {
-        const [paths, current] = acc;
+        const [paths, current, totalDistance] = acc;
         const next = this.nextPoint(current, segment);
-        paths.push(current.concat(next));
-        return [paths, next];
+        next.start = current;
+        next.totalDistance = totalDistance + next.distance;
+        paths.push(next);
+        return [paths, next.end, next.totalDistance];
     }
 
     buildWirePath(line) {
-        const [paths, _] = line.split(',').reduce((acc, segment) => this.nextPath(acc, segment), [[], [0, 0]]);
+        const [paths, _] = line.split(',').reduce((acc, segment) => this.nextPath(acc, segment), [[], [0, 0], 0]);
         return paths;
     }
 }
