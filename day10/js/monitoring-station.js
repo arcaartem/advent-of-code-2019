@@ -1,6 +1,6 @@
 function reduce(numerator, denominator) {
-    let gcd = (a,b) => Math.abs(b) ? gcd(Math.abs(b), Math.abs(a%b)) : Math.abs(a);
-    gcd = gcd(numerator,denominator);
+    let gcd = (a,b) => b ? gcd(b, a%b) : a;
+    gcd = gcd(Math.abs(numerator),Math.abs(denominator));
     let nn = numerator/gcd;
     let nd = denominator/gcd;
     return [numerator/gcd, denominator/gcd];
@@ -34,7 +34,7 @@ class MonitoringStation {
 
         const visible = {};
         slopes.forEach(s => {
-            const key = JSON.stringify(s.normalisedSlope);
+            const key = s.normalisedAngle;
             visible[key] = (visible[key] || []);
             visible[key].push(s);
         });
