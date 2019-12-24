@@ -1,8 +1,9 @@
 class Network {
     constructor() {
         this.computers = [];
-        this.inputQueue = {};
-        this.outputQueue = {};
+        this.inputQueue = [];
+        this.outputQueue = [];
+        this.idling = []
     }
 
     attach(computer, id) {
@@ -11,6 +12,7 @@ class Network {
         this.computers.push(computer);
         this.inputQueue[id] = [id];
         this.outputQueue[id] = [];
+        this.idling[id] = 0;
     }
 
     doInput(id) {
@@ -23,10 +25,15 @@ class Network {
 
     readInputQueue(id) {
         this.inputQueue[id] = this.inputQueue[id] || [];
-        return (this.inputQueue[id].length > 0) ? this.inputQueue[id].shift() : -1;
+        const hasData = this.inputQueue[id].length > 0;
+        if (!hasData) {
+            this.idling[id]++;
+        }
+        return hasData ? this.inputQueue[id].shift() : -1;
     }
 
     writeOutputQueue(id, value) {
+        this.idling[id] = 0;
         this.outputQueue[id] = this.outputQueue[id] || [];
         this.outputQueue[id].push(value);
         if (this.outputQueue[id].length >= 3) {
@@ -36,7 +43,7 @@ class Network {
 
     cycle() {
         this.computers.forEach(computer => computer.runInstruction());
-        return (this.natQueue == undefined);
+        return (!this.isIdle());
     }
 
     transmitData(id) {
@@ -47,6 +54,15 @@ class Network {
         } else {
             this.inputQueue[targetId] = (this.inputQueue[targetId] || []).concat([x, y])
         }
+    }
+
+    isIdle() {
+        const emptyInputQueue = this.inputQueue.every(queue => queue.length == 0);
+        const emptyOutputQueue = this.outputQueue.every(queue => queue.length == 0);
+        const beenIdling = this.idling.every(t => t > 100);
+        const natHasPacket = this.natQueue !== undefined;
+        const isIdle = emptyInputQueue && emptyOutputQueue && beenIdling && natHasPacket;
+        return isIdle;
     }
 }
 
