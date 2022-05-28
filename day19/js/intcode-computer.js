@@ -11,14 +11,6 @@ const OPCODES = {
     HALT: '99'
 }
 
-const opcodeName = (opcode) => {
-    return Object.keys(OPCODES).find( k => OPCODES[k] == opcode );
-}
-
-const modeName = (mode) => {
-    return Object.keys(PARAMETER_MODES).find( k => PARAMETER_MODES[k] == mode );
-}
-
 const PARAMETER_MODES = {
     POSITION: '0',
     VALUE: '1',

@@ -14,18 +14,19 @@ function movingTo(currentPos, direction) {
 }
 
 class Maze {
-    constructor() {
-        this.map = Array.from(Array(50), e => Array.from(Array(50)));
-        this.currentPos = [25, 25];
-        this.initialPos = [25, 25];
+    constructor(drone) {
+        this.drone = drone;
+        this.map = Array.from(Array(100), e => Array.from(Array(100)));
+        this.currentPos = [50, 50];
+        this.initialPos = [50, 50];
     }
 
-    visit(direction, status) {
+    visit(direction) {
         const nextPos = movingTo(this.currentPos, direction);
+        let status = this.drone.move(direction);
         this.markPosition(nextPos, status);
         switch (status) {
             case STATUS.WALL: 
-                this.markPosition(this.currentPos, STATUS.MOVE_OK);
                 break;
             case STATUS.MOVE_OK: 
                 this.currentPos = nextPos;
@@ -37,6 +38,7 @@ class Maze {
             default: 
                 throw `Unknown status ${ status } (of type ${ typeof status })`;
         }
+        return status;
     }
 
     markPosition(pos, status) {
